@@ -29,11 +29,11 @@ export class NftService {
                         { log_index: "desc" }
                     ]
                 }).then(res => {
-                    return {accountAddress: i, transfers: res}
+                    return {address: i, transfers: res}
                 })
             }),
         );
-        const nftCollection = await Promise.all(
+        const addressDetails = await Promise.all(
             nftTransfers.map((account) => {
                 return Promise.all(account.transfers.map((nft) => {
                         return new Promise<any>((resolve) => {
@@ -50,16 +50,37 @@ export class NftService {
                                     ]
                                 },
                             }).then((res) => {
-                                resolve({metadata: res[0].metadata, contractAddress: "0x"+res[0].token_contract_address_hash.toString("hex"), tokenId: res[0].token_id});
+                                resolve({metadata: res[0].metadata, tokenAddress: "0x"+res[0].token_contract_address_hash.toString("hex"), tokenId: res[0].token_id});
                             })
                         })
                     })
                 ).then(response => {
-                    return {accountDetails: {accountAddress: account.accountAddress, nfts: response}};
+                    return {addressDetail: {address: account.address, nfts: response}};
                 })
             })
         );
-        
-        return nftCollection;
+
+        let nftCollection = addressDetails.reduce((nftCollection, details) => {
+            if(details.addressDetail.nfts) {
+                details.addressDetail.nfts.forEach(nft => {
+                    if(!nftCollection[nft.tokenAddress]) {
+                        nftCollection[nft.tokenAddress] = [nft];
+                    }else {
+                        nftCollection[nft.tokenAddress].push(nft);
+                    }
+                });
+            }
+            else{ details.addressDetail.nfts = []; }
+            return nftCollection;
+        }, {});
+        nftCollection = Object.keys(nftCollection).map((nft) => { 
+            console.log(nft);
+            let collectionName = nftCollection[nft].find(e => e).collectionName;
+            return { collectionAddress: nft, collectionName: collectionName,  nfts: nftCollection[nft]} 
+        });
+        return {
+            addressDetails: addressDetails,
+            nftCollections: nftCollection
+        };;
     }
 }
