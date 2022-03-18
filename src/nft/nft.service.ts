@@ -74,7 +74,6 @@ export class NftService {
             return nftCollection;
         }, {});
         nftCollection = Object.keys(nftCollection).map((nft) => { 
-            console.log(nft);
             let collectionName = nftCollection[nft].find(e => e).collectionName;
             return { collectionAddress: nft, collectionName: collectionName,  nfts: nftCollection[nft]} 
         });
