@@ -55,14 +55,14 @@ export class NftService {
                         })
                     })
                 ).then(response => {
-                    return {addressDetail: {address: account.address, nfts: response}};
+                    return {address: account.address, nfts: response};
                 })
             })
         );
 
         let nftCollection = addressDetails.reduce((nftCollection, details) => {
-            if(details.addressDetail.nfts) {
-                details.addressDetail.nfts.forEach(nft => {
+            if(details.nfts) {
+                details.nfts.forEach(nft => {
                     if(!nftCollection[nft.tokenAddress]) {
                         nftCollection[nft.tokenAddress] = [nft];
                     }else {
@@ -70,7 +70,7 @@ export class NftService {
                     }
                 });
             }
-            else{ details.addressDetail.nfts = []; }
+            else{ details.nfts = []; }
             return nftCollection;
         }, {});
         nftCollection = Object.keys(nftCollection).map((nft) => { 
