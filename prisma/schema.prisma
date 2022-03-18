@@ -1,0 +1,600 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres@35.158.139.91:7432/blockscout?schema=public"
+}
+
+model address_coin_balances {
+  address_hash     Bytes
+  block_number     BigInt
+  value            Decimal?  @db.Decimal(100, 0)
+  value_fetched_at DateTime? @db.Timestamp(6)
+  inserted_at      DateTime  @db.Timestamp(6)
+  updated_at       DateTime  @db.Timestamp(6)
+  addresses        addresses @relation(fields: [address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([address_hash, block_number], map: "address_coin_balances_address_hash_block_number_index")
+  @@index([value_fetched_at], map: "address_coin_balances_value_fetched_at_index")
+}
+
+model address_coin_balances_daily {
+  address_hash Bytes
+  day          DateTime  @db.Date
+  value        Decimal?  @db.Decimal(100, 0)
+  inserted_at  DateTime  @db.Timestamp(6)
+  updated_at   DateTime  @db.Timestamp(6)
+  addresses    addresses @relation(fields: [address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([address_hash, day], map: "address_coin_balances_daily_address_hash_day_index")
+}
+
+model address_current_token_balances {
+  id                          BigInt    @id @default(autoincrement())
+  address_hash                Bytes
+  block_number                BigInt
+  token_contract_address_hash Bytes
+  value                       Decimal?  @db.Decimal
+  value_fetched_at            DateTime? @db.Timestamp(6)
+  inserted_at                 DateTime  @db.Timestamp(6)
+  updated_at                  DateTime  @db.Timestamp(6)
+  old_value                   Decimal?  @db.Decimal
+  token_id                    Decimal?  @db.Decimal(78, 0)
+  token_type                  String?   @db.VarChar(255)
+  addresses                   addresses @relation(fields: [address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  tokens                      tokens    @relation(fields: [token_contract_address_hash], references: [contract_address_hash], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([block_number], map: "address_cur_token_balances_index")
+  @@index([address_hash, block_number, token_contract_address_hash], map: "address_current_token_balances_address_hash_block_number_token_")
+  @@index([token_contract_address_hash, value], map: "address_current_token_balances_token_contract_address_hash_valu")
+  @@index([token_id], map: "address_current_token_balances_token_id_index")
+}
+
+model address_names {
+  address_hash Bytes
+  name         String   @db.VarChar(255)
+  primary      Boolean  @default(false)
+  inserted_at  DateTime @db.Timestamp(6)
+  updated_at   DateTime @db.Timestamp(6)
+  metadata     Json?
+
+  @@unique([address_hash, name], map: "unique_address_names")
+}
+
+model address_token_balances {
+  id                          BigInt    @id @default(autoincrement())
+  address_hash                Bytes
+  block_number                BigInt
+  token_contract_address_hash Bytes
+  value                       Decimal?  @db.Decimal
+  value_fetched_at            DateTime? @db.Timestamp(6)
+  inserted_at                 DateTime  @db.Timestamp(6)
+  updated_at                  DateTime  @db.Timestamp(6)
+  token_id                    Decimal?  @db.Decimal(78, 0)
+  token_type                  String?   @db.VarChar(255)
+  addresses                   addresses @relation(fields: [address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  tokens                      tokens    @relation(fields: [token_contract_address_hash], references: [contract_address_hash], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([address_hash, token_contract_address_hash, block_number], map: "address_token_balances_address_hash_token_contract_address_hash")
+  @@index([block_number, address_hash], map: "address_token_balances_block_number_address_hash_index")
+  @@index([token_contract_address_hash], map: "address_token_balances_token_contract_address_hash_index")
+  @@index([token_id], map: "address_token_balances_token_id_index")
+}
+
+model addresses {
+  fetched_coin_balance                                                                 Decimal?                         @db.Decimal(100, 0)
+  fetched_coin_balance_block_number                                                    BigInt?
+  hash                                                                                 Bytes                            @id
+  contract_code                                                                        Bytes?
+  inserted_at                                                                          DateTime                         @db.Timestamp(6)
+  updated_at                                                                           DateTime                         @db.Timestamp(6)
+  nonce                                                                                Int?
+  decompiled                                                                           Boolean?
+  verified                                                                             Boolean?
+  gas_used                                                                             BigInt?
+  transactions_count                                                                   Int?
+  token_transfers_count                                                                Int?
+  address_coin_balances                                                                address_coin_balances[]
+  address_coin_balances_daily                                                          address_coin_balances_daily[]
+  address_current_token_balances                                                       address_current_token_balances[]
+  address_token_balances                                                               address_token_balances[]
+  block_rewards                                                                        block_rewards[]
+  blocks                                                                               blocks[]
+  decompiled_smart_contracts                                                           decompiled_smart_contracts[]
+  internal_transactions_addressesTointernal_transactions_created_contract_address_hash internal_transactions[]          @relation("addressesTointernal_transactions_created_contract_address_hash")
+  internal_transactions_addressesTointernal_transactions_from_address_hash             internal_transactions[]          @relation("addressesTointernal_transactions_from_address_hash")
+  internal_transactions_addressesTointernal_transactions_to_address_hash               internal_transactions[]          @relation("addressesTointernal_transactions_to_address_hash")
+  logs                                                                                 logs[]
+  smart_contracts                                                                      smart_contracts?
+  token_transfers_addressesTotoken_transfers_from_address_hash                         token_transfers[]                @relation("addressesTotoken_transfers_from_address_hash")
+  token_transfers_addressesTotoken_transfers_to_address_hash                           token_transfers[]                @relation("addressesTotoken_transfers_to_address_hash")
+  token_transfers_addressesTotoken_transfers_token_contract_address_hash               token_transfers[]                @relation("addressesTotoken_transfers_token_contract_address_hash")
+  tokens                                                                               tokens?
+  transactions_addressesTotransactions_created_contract_address_hash                   transactions[]                   @relation("addressesTotransactions_created_contract_address_hash")
+  transactions_addressesTotransactions_from_address_hash                               transactions[]                   @relation("addressesTotransactions_from_address_hash")
+  transactions_addressesTotransactions_to_address_hash                                 transactions[]                   @relation("addressesTotransactions_to_address_hash")
+
+  @@index([fetched_coin_balance], map: "addresses_fetched_coin_balance_index")
+  @@index([inserted_at], map: "addresses_inserted_at_index")
+}
+
+model administrators {
+  id          BigInt   @id @default(autoincrement())
+  role        String   @db.VarChar(255)
+  user_id     BigInt   @unique(map: "administrators_user_id_index")
+  inserted_at DateTime @db.Timestamp(6)
+  updated_at  DateTime @db.Timestamp(6)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model block_rewards {
+  address_hash Bytes
+  address_type String    @db.VarChar(255)
+  block_hash   Bytes
+  reward       Decimal?  @db.Decimal(100, 0)
+  inserted_at  DateTime  @db.Timestamp(0)
+  updated_at   DateTime  @db.Timestamp(0)
+  addresses    addresses @relation(fields: [address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  blocks       blocks    @relation(fields: [block_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([address_hash, block_hash, address_type], map: "block_rewards_address_hash_block_hash_address_type_index")
+  @@index([block_hash], map: "block_rewards_block_hash_index")
+}
+
+model block_second_degree_relations {
+  nephew_hash      Bytes
+  uncle_hash       Bytes
+  uncle_fetched_at DateTime? @db.Timestamp(6)
+  index            Int?
+  blocks           blocks    @relation(fields: [nephew_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([nephew_hash, uncle_hash])
+  @@unique([nephew_hash, uncle_hash], map: "nephew_hash_to_uncle_hash")
+  @@unique([uncle_hash, nephew_hash], map: "uncle_hash_to_nephew_hash")
+}
+
+model blocks {
+  consensus                     Boolean
+  difficulty                    Decimal?                        @db.Decimal(50, 0)
+  gas_limit                     Decimal                         @db.Decimal(100, 0)
+  gas_used                      Decimal                         @db.Decimal(100, 0)
+  hash                          Bytes                           @id
+  miner_hash                    Bytes
+  nonce                         Bytes
+  number                        BigInt
+  parent_hash                   Bytes
+  size                          Int?
+  timestamp                     DateTime                        @db.Timestamp(6)
+  total_difficulty              Decimal?                        @db.Decimal(50, 0)
+  inserted_at                   DateTime                        @db.Timestamp(6)
+  updated_at                    DateTime                        @db.Timestamp(6)
+  refetch_needed                Boolean?                        @default(false)
+  base_fee_per_gas              Decimal?                        @db.Decimal(100, 0)
+  is_empty                      Boolean?
+  addresses                     addresses                       @relation(fields: [miner_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  block_rewards                 block_rewards[]
+  block_second_degree_relations block_second_degree_relations[]
+  internal_transactions         internal_transactions[]
+  logs                          logs[]
+  pending_block_operations      pending_block_operations?
+  token_transfers               token_transfers[]
+  transaction_forks             transaction_forks[]
+  transactions                  transactions[]
+
+  @@index([consensus], map: "blocks_consensus_index")
+  @@index([inserted_at], map: "blocks_inserted_at_index")
+  @@index([is_empty], map: "blocks_is_empty_index")
+  @@index([miner_hash], map: "blocks_miner_hash_index")
+  @@index([miner_hash, number], map: "blocks_miner_hash_number_index")
+  @@index([number], map: "blocks_number_index")
+  @@index([timestamp], map: "blocks_timestamp_index")
+}
+
+model bridged_tokens {
+  foreign_chain_id                    Decimal  @db.Decimal
+  foreign_token_contract_address_hash Bytes
+  home_token_contract_address_hash    Bytes    @unique(map: "bridged_tokens_home_token_contract_address_hash_index")
+  inserted_at                         DateTime @db.Timestamp(6)
+  updated_at                          DateTime @db.Timestamp(6)
+  custom_metadata                     String?  @db.VarChar(255)
+  type                                String?  @db.VarChar(255)
+  exchange_rate                       Decimal? @db.Decimal
+  lp_token                            Boolean?
+  custom_cap                          Decimal? @db.Decimal
+  tokens                              tokens   @relation(fields: [home_token_contract_address_hash], references: [contract_address_hash], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model contract_methods {
+  id          BigInt   @id @default(autoincrement())
+  identifier  Int
+  abi         Json
+  type        String   @db.VarChar(255)
+  inserted_at DateTime @db.Timestamp(6)
+  updated_at  DateTime @db.Timestamp(6)
+
+  @@unique([identifier, abi], map: "contract_methods_identifier_abi_index")
+}
+
+model contract_verification_status {
+  uid          String   @id @db.VarChar(64)
+  status       Int      @db.SmallInt
+  address_hash Bytes
+  inserted_at  DateTime @db.Timestamp(6)
+  updated_at   DateTime @db.Timestamp(6)
+}
+
+model decompiled_smart_contracts {
+  id                     BigInt    @id @default(autoincrement())
+  decompiler_version     String    @db.VarChar(255)
+  decompiled_source_code String
+  address_hash           Bytes
+  inserted_at            DateTime  @db.Timestamp(6)
+  updated_at             DateTime  @db.Timestamp(6)
+  addresses              addresses @relation(fields: [address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([address_hash, decompiler_version], map: "address_decompiler_version")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model emission_rewards {
+  block_range Unsupported("int8range")?
+  reward      Decimal?                  @db.Decimal
+
+  @@index([block_range], map: "emission_rewards_block_range_index")
+  @@index([block_range], map: "no_overlapping_ranges")
+  @@ignore
+}
+
+model internal_transactions {
+  call_type                                                                String?      @db.VarChar(255)
+  created_contract_code                                                    Bytes?
+  error                                                                    String?      @db.VarChar(255)
+  gas                                                                      Decimal?     @db.Decimal(100, 0)
+  gas_used                                                                 Decimal?     @db.Decimal(100, 0)
+  index                                                                    Int
+  init                                                                     Bytes?
+  input                                                                    Bytes?
+  output                                                                   Bytes?
+  trace_address                                                            Int[]
+  type                                                                     String       @db.VarChar(255)
+  value                                                                    Decimal      @db.Decimal(100, 0)
+  inserted_at                                                              DateTime     @db.Timestamp(6)
+  updated_at                                                               DateTime     @db.Timestamp(6)
+  created_contract_address_hash                                            Bytes?
+  from_address_hash                                                        Bytes?
+  to_address_hash                                                          Bytes?
+  transaction_hash                                                         Bytes
+  block_number                                                             Int?
+  transaction_index                                                        Int?
+  block_hash                                                               Bytes
+  block_index                                                              Int
+  blocks                                                                   blocks       @relation(fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTointernal_transactions_created_contract_address_hash addresses?   @relation("addressesTointernal_transactions_created_contract_address_hash", fields: [created_contract_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTointernal_transactions_from_address_hash             addresses?   @relation("addressesTointernal_transactions_from_address_hash", fields: [from_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTointernal_transactions_to_address_hash               addresses?   @relation("addressesTointernal_transactions_to_address_hash", fields: [to_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  transactions                                                             transactions @relation(fields: [transaction_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([block_hash, block_index])
+  @@index([block_number, transaction_index, index], map: "internal_transactions_block_number_DESC__transaction_index_DESC")
+  @@index([created_contract_address_hash], map: "internal_transactions_created_contract_address_hash_index")
+  @@index([from_address_hash], map: "internal_transactions_from_address_hash_index")
+  @@index([transaction_hash, index], map: "internal_transactions_transaction_hash_index_index")
+}
+
+model last_fetched_counters {
+  counter_type String   @id @db.VarChar(255)
+  value        Decimal? @db.Decimal(100, 0)
+  inserted_at  DateTime @db.Timestamp(6)
+  updated_at   DateTime @db.Timestamp(6)
+}
+
+model logs {
+  data             Bytes
+  index            Int
+  type             String?      @db.VarChar(255)
+  first_topic      String?      @db.VarChar(255)
+  second_topic     String?      @db.VarChar(255)
+  third_topic      String?      @db.VarChar(255)
+  fourth_topic     String?      @db.VarChar(255)
+  inserted_at      DateTime     @db.Timestamp(6)
+  updated_at       DateTime     @db.Timestamp(6)
+  address_hash     Bytes?
+  transaction_hash Bytes
+  block_hash       Bytes
+  block_number     Int?
+  addresses        addresses?   @relation(fields: [address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  blocks           blocks       @relation(fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  transactions     transactions @relation(fields: [transaction_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([transaction_hash, block_hash, index])
+  @@index([address_hash], map: "logs_address_hash_index")
+  @@index([address_hash, transaction_hash], map: "logs_address_hash_transaction_hash_index")
+  @@index([block_number, index], map: "logs_block_number_DESC__index_DESC_index")
+  @@index([first_topic], map: "logs_first_topic_index")
+  @@index([fourth_topic], map: "logs_fourth_topic_index")
+  @@index([index], map: "logs_index_index")
+  @@index([second_topic], map: "logs_second_topic_index")
+  @@index([third_topic], map: "logs_third_topic_index")
+  @@index([transaction_hash, index], map: "logs_transaction_hash_index_index")
+  @@index([type], map: "logs_type_index")
+}
+
+model market_history {
+  id            BigInt    @id @default(autoincrement())
+  date          DateTime? @unique(map: "market_history_date_index") @db.Date
+  closing_price Decimal?  @db.Decimal
+  opening_price Decimal?  @db.Decimal
+}
+
+model pending_block_operations {
+  block_hash                  Bytes    @id
+  inserted_at                 DateTime @db.Timestamp(6)
+  updated_at                  DateTime @db.Timestamp(6)
+  fetch_internal_transactions Boolean
+  blocks                      blocks   @relation(fields: [block_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model schema_migrations {
+  version     BigInt    @id
+  inserted_at DateTime? @db.Timestamp(0)
+}
+
+model smart_contracts {
+  id                                 BigInt                               @id @default(autoincrement())
+  name                               String                               @db.VarChar(255)
+  compiler_version                   String                               @db.VarChar(255)
+  optimization                       Boolean
+  contract_source_code               String
+  abi                                Json
+  address_hash                       Bytes                                @unique(map: "smart_contracts_address_hash_index")
+  inserted_at                        DateTime                             @db.Timestamp(6)
+  updated_at                         DateTime                             @db.Timestamp(6)
+  constructor_arguments              String?
+  optimization_runs                  BigInt?
+  evm_version                        String?                              @db.VarChar(255)
+  external_libraries                 Json[]
+  verified_via_sourcify              Boolean?
+  is_vyper_contract                  Boolean?
+  partially_verified                 Boolean?
+  file_path                          String?
+  is_changed_bytecode                Boolean?                             @default(false)
+  bytecode_checked_at                DateTime?                            @default(dbgenerated("(timezone('utc'::text, now()) - '1 day'::interval)")) @db.Timestamp(6)
+  contract_code_md5                  String                               @db.VarChar(255)
+  implementation_name                String?                              @db.VarChar(255)
+  addresses                          addresses                            @relation(fields: [address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  smart_contracts_additional_sources smart_contracts_additional_sources[]
+
+  @@index([contract_code_md5], map: "smart_contracts_contract_code_md5_index")
+}
+
+model smart_contracts_additional_sources {
+  id                   BigInt          @id @default(autoincrement())
+  file_name            String          @db.VarChar(255)
+  contract_source_code String
+  address_hash         Bytes
+  inserted_at          DateTime        @db.Timestamp(6)
+  updated_at           DateTime        @db.Timestamp(6)
+  smart_contracts      smart_contracts @relation(fields: [address_hash], references: [address_hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([address_hash], map: "smart_contracts_additional_sources_address_hash_index")
+}
+
+model staking_pools {
+  id                                 BigInt   @id @default(autoincrement())
+  are_delegators_banned              Boolean? @default(false)
+  banned_delegators_until            BigInt?
+  banned_until                       BigInt?
+  ban_reason                         String?  @db.VarChar(255)
+  delegators_count                   Int?
+  is_active                          Boolean  @default(false)
+  is_banned                          Boolean  @default(false)
+  is_deleted                         Boolean  @default(false)
+  is_unremovable                     Boolean  @default(false)
+  is_validator                       Boolean  @default(false)
+  likelihood                         Decimal? @db.Decimal(5, 2)
+  mining_address_hash                Bytes?
+  self_staked_amount                 Decimal? @db.Decimal(100, 0)
+  snapshotted_self_staked_amount     Decimal? @db.Decimal(100, 0)
+  snapshotted_total_staked_amount    Decimal? @db.Decimal(100, 0)
+  snapshotted_validator_reward_ratio Decimal? @db.Decimal(5, 2)
+  stakes_ratio                       Decimal? @db.Decimal(5, 2)
+  staking_address_hash               Bytes?   @unique(map: "staking_pools_staking_address_hash_index")
+  total_staked_amount                Decimal? @db.Decimal(100, 0)
+  validator_reward_percent           Decimal? @db.Decimal(5, 2)
+  validator_reward_ratio             Decimal? @db.Decimal(5, 2)
+  was_banned_count                   Int?
+  was_validator_count                Int?
+  inserted_at                        DateTime @db.Timestamp(6)
+  updated_at                         DateTime @db.Timestamp(6)
+  name                               String?  @db.VarChar(256)
+  description                        String?  @db.VarChar(1024)
+
+  @@index([mining_address_hash], map: "staking_pools_mining_address_hash_index")
+}
+
+model staking_pools_delegators {
+  id                           BigInt   @id @default(autoincrement())
+  address_hash                 Bytes?
+  is_active                    Boolean? @default(true)
+  is_deleted                   Boolean? @default(false)
+  max_ordered_withdraw_allowed Decimal? @db.Decimal(100, 0)
+  max_withdraw_allowed         Decimal? @db.Decimal(100, 0)
+  ordered_withdraw             Decimal? @db.Decimal(100, 0)
+  ordered_withdraw_epoch       Int?
+  reward_ratio                 Decimal? @db.Decimal(5, 2)
+  snapshotted_reward_ratio     Decimal? @db.Decimal(5, 2)
+  snapshotted_stake_amount     Decimal? @db.Decimal(100, 0)
+  stake_amount                 Decimal? @db.Decimal(100, 0)
+  staking_address_hash         Bytes?
+  inserted_at                  DateTime @db.Timestamp(6)
+  updated_at                   DateTime @db.Timestamp(6)
+
+  @@unique([address_hash, staking_address_hash], map: "pools_delegator_index")
+  @@index([staking_address_hash, snapshotted_stake_amount, is_active], map: "snapshotted_stake_amount_index")
+}
+
+model token_instances {
+  token_id                    Decimal  @db.Decimal(78, 0)
+  token_contract_address_hash Bytes
+  metadata                    Json?
+  inserted_at                 DateTime @db.Timestamp(6)
+  updated_at                  DateTime @db.Timestamp(6)
+  error                       String?  @db.VarChar(255)
+  tokens                      tokens   @relation(fields: [token_contract_address_hash], references: [contract_address_hash], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([token_id, token_contract_address_hash])
+  @@index([error], map: "token_instances_error_index")
+}
+
+model token_transfers {
+  transaction_hash                                                 Bytes
+  log_index                                                        Int
+  from_address_hash                                                Bytes
+  to_address_hash                                                  Bytes
+  amount                                                           Decimal?     @db.Decimal
+  token_id                                                         Decimal?     @db.Decimal(78, 0)
+  token_contract_address_hash                                      Bytes
+  inserted_at                                                      DateTime     @db.Timestamp(6)
+  updated_at                                                       DateTime     @db.Timestamp(6)
+  block_number                                                     Int?
+  block_hash                                                       Bytes
+  amounts                                                          Decimal[]    @db.Decimal
+  token_ids                                                        Decimal[]    @db.Decimal(78, 0)
+  blocks                                                           blocks       @relation(fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTotoken_transfers_from_address_hash           addresses    @relation("addressesTotoken_transfers_from_address_hash", fields: [from_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTotoken_transfers_to_address_hash             addresses    @relation("addressesTotoken_transfers_to_address_hash", fields: [to_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTotoken_transfers_token_contract_address_hash addresses    @relation("addressesTotoken_transfers_token_contract_address_hash", fields: [token_contract_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  transactions                                                     transactions @relation(fields: [transaction_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([transaction_hash, block_hash, log_index])
+  @@index([block_number, log_index], map: "token_transfers_block_number_DESC_log_index_DESC_index")
+  @@index([block_number], map: "token_transfers_block_number_index")
+  @@index([from_address_hash, transaction_hash], map: "token_transfers_from_address_hash_transaction_hash_index")
+  @@index([to_address_hash, transaction_hash], map: "token_transfers_to_address_hash_transaction_hash_index")
+  @@index([token_contract_address_hash, block_number], map: "token_transfers_token_contract_address_hash_block_number_index")
+  @@index([token_contract_address_hash, token_id, block_number], map: "token_transfers_token_contract_address_hash_token_id_DESC_block")
+  @@index([token_contract_address_hash, transaction_hash], map: "token_transfers_token_contract_address_hash_transaction_hash_in")
+  @@index([token_id], map: "token_transfers_token_id_index")
+  @@index([transaction_hash, log_index], map: "token_transfers_transaction_hash_log_index_index")
+}
+
+model tokens {
+  name                           String?                          @db.VarChar(255)
+  symbol                         String?                          @db.VarChar(255)
+  total_supply                   Decimal?                         @db.Decimal
+  decimals                       Decimal?                         @db.Decimal
+  type                           String                           @db.VarChar(255)
+  cataloged                      Boolean?                         @default(false)
+  contract_address_hash          Bytes                            @id @unique(map: "tokens_contract_address_hash_index")
+  inserted_at                    DateTime                         @db.Timestamp(6)
+  updated_at                     DateTime                         @db.Timestamp(6)
+  holder_count                   Int?
+  bridged                        Boolean?
+  skip_metadata                  Boolean?
+  addresses                      addresses                        @relation(fields: [contract_address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  address_current_token_balances address_current_token_balances[]
+  address_token_balances         address_token_balances[]
+  bridged_tokens                 bridged_tokens?
+  token_instances                token_instances[]
+
+  @@index([symbol], map: "tokens_symbol_index")
+  @@index([type], map: "tokens_type_index")
+}
+
+model transaction_forks {
+  hash         Bytes
+  index        Int
+  uncle_hash   Bytes
+  inserted_at  DateTime     @db.Timestamp(6)
+  updated_at   DateTime     @db.Timestamp(6)
+  transactions transactions @relation(fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  blocks       blocks       @relation(fields: [uncle_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([uncle_hash, index], map: "transaction_forks_uncle_hash_index_index")
+}
+
+model transaction_stats {
+  id                     BigInt    @id @default(autoincrement())
+  date                   DateTime? @unique(map: "transaction_stats_date_index") @db.Date
+  number_of_transactions Int?
+  gas_used               Decimal?  @db.Decimal(100, 0)
+  total_fee              Decimal?  @db.Decimal(100, 0)
+}
+
+model transactions {
+  cumulative_gas_used                                             Decimal?                @db.Decimal(100, 0)
+  error                                                           String?                 @db.VarChar(255)
+  gas                                                             Decimal                 @db.Decimal(100, 0)
+  gas_price                                                       Decimal                 @db.Decimal(100, 0)
+  gas_used                                                        Decimal?                @db.Decimal(100, 0)
+  hash                                                            Bytes                   @id
+  index                                                           Int?
+  input                                                           Bytes
+  nonce                                                           Int
+  r                                                               Decimal                 @db.Decimal(100, 0)
+  s                                                               Decimal                 @db.Decimal(100, 0)
+  status                                                          Int?
+  v                                                               Decimal                 @db.Decimal(100, 0)
+  value                                                           Decimal                 @db.Decimal(100, 0)
+  inserted_at                                                     DateTime                @db.Timestamp(6)
+  updated_at                                                      DateTime                @db.Timestamp(6)
+  block_hash                                                      Bytes?
+  block_number                                                    Int?
+  from_address_hash                                               Bytes
+  to_address_hash                                                 Bytes?
+  created_contract_address_hash                                   Bytes?
+  created_contract_code_indexed_at                                DateTime?               @db.Timestamp(6)
+  earliest_processing_start                                       DateTime?               @db.Timestamp(6)
+  old_block_hash                                                  Bytes?
+  revert_reason                                                   String?
+  max_priority_fee_per_gas                                        Decimal?                @db.Decimal(100, 0)
+  max_fee_per_gas                                                 Decimal?                @db.Decimal(100, 0)
+  type                                                            Int?
+  has_error_in_internal_txs                                       Boolean?
+  blocks                                                          blocks?                 @relation(fields: [block_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  addresses_addressesTotransactions_created_contract_address_hash addresses?              @relation("addressesTotransactions_created_contract_address_hash", fields: [created_contract_address_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction)
+  addresses_addressesTotransactions_from_address_hash             addresses               @relation("addressesTotransactions_from_address_hash", fields: [from_address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  addresses_addressesTotransactions_to_address_hash               addresses?              @relation("addressesTotransactions_to_address_hash", fields: [to_address_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction)
+  internal_transactions                                           internal_transactions[]
+  logs                                                            logs[]
+  token_transfers                                                 token_transfers[]
+  transaction_forks                                               transaction_forks[]
+
+  @@unique([block_hash, index], map: "transactions_block_hash_index_index")
+  @@index([block_hash, error], map: "transactions_block_hash_error_index")
+  @@index([block_number], map: "transactions_block_number_index")
+  @@index([created_contract_address_hash, block_number, index, hash], map: "transactions_created_contract_address_hash_recent_collated_inde")
+  @@index([created_contract_code_indexed_at], map: "transactions_created_contract_code_indexed_at_index")
+  @@index([from_address_hash, block_number, index, hash], map: "transactions_from_address_hash_recent_collated_index")
+  @@index([inserted_at], map: "transactions_inserted_at_index")
+  @@index([nonce, from_address_hash, block_hash], map: "transactions_nonce_from_address_hash_block_hash_index")
+  @@index([block_number, index], map: "transactions_recent_collated_index")
+  @@index([status], map: "transactions_status_index")
+  @@index([to_address_hash, block_number, index, hash], map: "transactions_to_address_hash_recent_collated_index")
+  @@index([updated_at], map: "transactions_updated_at_index")
+}
+
+model user_contacts {
+  id          BigInt   @id @default(autoincrement())
+  email       String   @db.Citext
+  user_id     BigInt
+  primary     Boolean? @default(false)
+  verified    Boolean? @default(false)
+  inserted_at DateTime @db.Timestamp(6)
+  updated_at  DateTime @db.Timestamp(6)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, email], map: "email_unique_for_user")
+}
+
+model users {
+  id             BigInt          @id @default(autoincrement())
+  username       String          @unique(map: "unique_username") @db.Citext
+  password_hash  String          @db.VarChar(255)
+  inserted_at    DateTime        @db.Timestamp(6)
+  updated_at     DateTime        @db.Timestamp(6)
+  administrators administrators?
+  user_contacts  user_contacts[]
+}
